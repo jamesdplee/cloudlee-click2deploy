@@ -55,12 +55,12 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2019-11-0
         }
       }
       {
-        name: 'allow-inbound-web'
+        name: 'allow-inbound-http'
         properties: {
-          description: 'Allows web inbound from all source addresses (should lock this down!)'
+          description: 'Allows http inbound from all source addresses (should lock this down!)'
           protocol: 'Tcp'
           sourcePortRange: '*'
-          destinationPortRange: '80, 443'
+          destinationPortRange: '80'
           sourceAddressPrefix: '*'
           destinationAddressPrefix: '*'
           access: 'Allow'
