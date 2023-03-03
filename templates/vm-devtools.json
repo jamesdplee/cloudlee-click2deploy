@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.14.85.62628",
-      "templateHash": "4518844747268674596"
+      "templateHash": "4835627418656626949"
     }
   },
   "parameters": {
@@ -112,7 +112,7 @@
               "description": "Allows web inbound from all source addresses (should lock this down!)",
               "protocol": "Tcp",
               "sourcePortRange": "*",
-              "destinationPortRange": "80,443",
+              "destinationPortRange": "80, 443",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
