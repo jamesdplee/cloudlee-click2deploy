@@ -60,7 +60,7 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2019-11-0
           description: 'Allows web inbound from all source addresses (should lock this down!)'
           protocol: 'Tcp'
           sourcePortRange: '*'
-          destinationPortRange: '80,443'
+          destinationPortRange: '80, 443'
           sourceAddressPrefix: '*'
           destinationAddressPrefix: '*'
           access: 'Allow'
