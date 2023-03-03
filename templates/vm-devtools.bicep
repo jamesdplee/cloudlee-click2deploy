@@ -6,23 +6,33 @@
 */
 
 // VM params and default values
+@description('Enter a name for your VM.')
 param vmName string = 'web1-vm'
+@description('Choose a size for your VM.')
 param vmSize string = 'Standard_B2s'
 var vmNicName = '${vmName}-nic1'
 var vmIpName = '${vmName}-ip'
+@description('Enter a username for accessing your VM.')
 param vmAdminUser string = 'azureuser'
 @secure()
+@description('Enter the password for accessing your VM.')
 param vmAdminPassword string
 var dnsLabelPrefix = toLower('${vmName}-${uniqueString(resourceGroup().id, vmName)}')
 
 // VNet values
+@description('Enter a name for your VNet.')
 param vnetName string = 'vnet1'
+@description('Choose an address space for your VNet.')
 param vnetAddressSpace string = '10.100.0.0/16'
+@description('Enter a name for the subnet to be created in your VNet.')
 param vnetSubnetName string = 'subnet1'
+@description('Enter an address space for your subnet (within the VNet).')
 param vnetSubnetSpace string = '10.100.1.0/24'
+@description('Enter a name for the NSG that will protect your VNet.')
 param nsgName string = 'nsg1'
 
 // Global values
+@description('Leave this as-is for all resources to be created in the same locaiton as the resource group.')
 param location string   = resourceGroup().location
 
 resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {

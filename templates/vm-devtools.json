@@ -5,48 +5,78 @@
     "_generator": {
       "name": "bicep",
       "version": "0.14.85.62628",
-      "templateHash": "16118878564443676497"
+      "templateHash": "4518844747268674596"
     }
   },
   "parameters": {
     "vmName": {
       "type": "string",
-      "defaultValue": "web1-vm"
+      "defaultValue": "web1-vm",
+      "metadata": {
+        "description": "Enter a name for your VM."
+      }
     },
     "vmSize": {
       "type": "string",
-      "defaultValue": "Standard_B2s"
+      "defaultValue": "Standard_B2s",
+      "metadata": {
+        "description": "Choose a size for your VM."
+      }
     },
     "vmAdminUser": {
       "type": "string",
-      "defaultValue": "azureuser"
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Enter a username for accessing your VM."
+      }
     },
     "vmAdminPassword": {
-      "type": "securestring"
+      "type": "securestring",
+      "metadata": {
+        "description": "Enter the password for accessing your VM."
+      }
     },
     "vnetName": {
       "type": "string",
-      "defaultValue": "vnet1"
+      "defaultValue": "vnet1",
+      "metadata": {
+        "description": "Enter a name for your VNet."
+      }
     },
     "vnetAddressSpace": {
       "type": "string",
-      "defaultValue": "10.100.0.0/16"
+      "defaultValue": "10.100.0.0/16",
+      "metadata": {
+        "description": "Choose an address space for your VNet."
+      }
     },
     "vnetSubnetName": {
       "type": "string",
-      "defaultValue": "subnet1"
+      "defaultValue": "subnet1",
+      "metadata": {
+        "description": "Enter a name for the subnet to be created in your VNet."
+      }
     },
     "vnetSubnetSpace": {
       "type": "string",
-      "defaultValue": "10.100.1.0/24"
+      "defaultValue": "10.100.1.0/24",
+      "metadata": {
+        "description": "Enter an address space for your subnet (within the VNet)."
+      }
     },
     "nsgName": {
       "type": "string",
-      "defaultValue": "nsg1"
+      "defaultValue": "nsg1",
+      "metadata": {
+        "description": "Enter a name for the NSG that will protect your VNet."
+      }
     },
     "location": {
       "type": "string",
-      "defaultValue": "[resourceGroup().location]"
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Leave this as-is for all resources to be created in the same locaiton as the resource group."
+      }
     }
   },
   "variables": {
