@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.14.85.62628",
-      "templateHash": "11969839665260265086"
+      "templateHash": "8691986008401621708"
     }
   },
   "parameters": {
@@ -95,6 +95,22 @@
         "description": "Enter your Azure DevOps project name (e.g. \"web-servers\")."
       }
     },
+    "scriptName": {
+      "type": "string",
+      "defaultValue": "cse-vmWebSetup.ps1",
+      "metadata": {
+        "description": "Enter the name of the CSE script to run (recommended to leave as-is)."
+      }
+    },
+    "scriptUris": {
+      "type": "array",
+      "defaultValue": [
+        "[format('https://raw.githubusercontent.com/jamesdplee/cloudlee-click2deploy/main/scripts/{0}', parameters('scriptName'))]"
+      ],
+      "metadata": {
+        "description": "Enter the name of the CSE script URI (recommended to leave as-is)."
+      }
+    },
     "location": {
       "type": "string",
       "defaultValue": "[resourceGroup().location]",
@@ -107,7 +123,9 @@
     "vmNicName": "[format('{0}-nic1', parameters('vmName'))]",
     "vmIpName": "[format('{0}-ip', parameters('vmName'))]",
     "dnsLabelPrefix": "[toLower(format('{0}-{1}', parameters('vmName'), uniqueString(resourceGroup().id, parameters('vmName'))))]",
-    "devOpsAgentName": "[parameters('vmName')]"
+    "devOpsAgentName": "[parameters('vmName')]",
+    "scriptArgs": "",
+    "scriptCmd": "[format('powershell -ExecutionPolicy Unrestricted -File {0} {1}', parameters('scriptName'), variables('scriptArgs'))]"
   },
   "resources": [
     {
@@ -213,6 +231,27 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', variables('vmIpName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', parameters('vmName'), 'config-app')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "enableAutomaticUpgrade": false,
+        "settings": {},
+        "protectedSettings": {
+          "fileUris": "[parameters('scriptUris')]",
+          "commandToExecute": "[variables('scriptCmd')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       ]
     },
     {

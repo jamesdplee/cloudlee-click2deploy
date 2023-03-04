@@ -36,6 +36,14 @@ param devOpsProjectName string
 param devOpsDeploymentGroup string
 var devOpsAgentName = vmName
 
+// CSE for Web Server setup
+@description('Enter the name of the CSE script to run (recommended to leave as-is).')
+param scriptName string = 'cse-vmWebSetup.ps1'
+@description('Enter the name of the CSE script URI (recommended to leave as-is).')
+param scriptUris array = ['https://raw.githubusercontent.com/jamesdplee/cloudlee-click2deploy/main/scripts/${scriptName}']
+var scriptArgs = ''
+var scriptCmd = 'powershell -ExecutionPolicy Unrestricted -File ${scriptName} ${scriptArgs}'
+
 // Global values
 @description('Leave this as-is, for all resources to be created in the same locaiton as the resource group.')
 param location string   = resourceGroup().location
@@ -137,7 +145,23 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = {
   }
 }
 
-
+resource windowsVMCSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+  parent: windowsVM
+  name: 'config-app'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
+    autoUpgradeMinorVersion: true
+    enableAutomaticUpgrade: false
+    settings: { }
+    protectedSettings: { 
+      fileUris: scriptUris
+      commandToExecute: scriptCmd
+    }
+  }
+}
 
 resource windowsVMGuestConfigExtension 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: windowsVM
