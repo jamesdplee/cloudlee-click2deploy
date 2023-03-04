@@ -8,5 +8,3 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem ; [System.IO.Compression
 # Setup Azure DevOps Pool Agent
 Set-Location C:\agent
 .\config --unattended --url $devOpsUri --auth pat --token $devOpsPAT --runAsService
-
-***REMOVED***
