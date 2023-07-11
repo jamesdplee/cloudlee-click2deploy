@@ -31,7 +31,7 @@ param nsgName string = 'web-nsg'
 
 // CSE for Web Server setup with Aus-E-Mart installation
 @description('Enter the name of the CSE script to run (recommended to leave as-is).')
-param scriptName string = 'cse-vmAEMWebSetup.ps1'
+param scriptName string = 'cse-vmAEMWebAppSetup.ps1'
 @description('Enter the name of the CSE script URI (recommended to leave as-is).')
 param scriptUris array = ['https://raw.githubusercontent.com/jamesdplee/cloudlee-click2deploy/main/scripts/${scriptName}']
 var scriptArgs = ''

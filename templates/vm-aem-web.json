@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.18.4.5664",
-      "templateHash": "15507847896329095164"
+      "templateHash": "9024700853689814686"
     }
   },
   "parameters": {
@@ -80,7 +80,7 @@
     },
     "scriptName": {
       "type": "string",
-      "defaultValue": "cse-vmAEMWebSetup.ps1",
+      "defaultValue": "cse-vmAEMWebAppSetup.ps1",
       "metadata": {
         "description": "Enter the name of the CSE script to run (recommended to leave as-is)."
       }
