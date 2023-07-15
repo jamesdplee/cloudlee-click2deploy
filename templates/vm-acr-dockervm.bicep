@@ -12,6 +12,9 @@ param vmAdminUser string = 'azureuser'
 param vmAdminPassword string
 var dnsLabelPrefixVM1 = toLower('${vm1Name}-${uniqueString(resourceGroup().id, vm1Name)}')
 
+// Cloud Init for VM - Docker and Azure CLI
+var cloudInit = base64(loadTextContent('../scripts/customdata-DockerAzCLI.yml'))
+
 // VNet values
 @description('Enter a name for your shared VNet.')
 param vnetName string = 'dev-vnet'
@@ -24,13 +27,28 @@ param vnetSubnetSpace string = '10.10.1.0/24'
 @description('Enter a name for the NSG that will protect your VNet.')
 param nsgName string = 'dev-nsg'
 
-// Custom Script for VM with Docker and Azure CLI
-var cloudInit = base64(loadTextContent('../scripts/customdata-DockerAzCLI.yml'))
-
+// ACR
+@minLength(5)
+@maxLength(50)
+@description('Provide a unique name for Azure Container Registry (or let it autogenerate)')
+param acrName string = 'acr${uniqueString(resourceGroup().id)}'
+@description('Provide a tier of your Azure Container Registry.')
+param acrSku string = 'Basic'
 
 // Global values
 @description('Leave this as-is, for all resources to be created in the same locaiton as the resource group.')
 param location string   = resourceGroup().location
+
+resource acrResource 'Microsoft.ContainerRegistry/registries@2023-01-01-preview' = {
+  name: acrName
+  location: location
+  sku: {
+    name: acrSku
+  }
+  properties: {
+    adminUserEnabled: true
+  }
+}
 
 resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
   name: nsgName

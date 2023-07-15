@@ -4,48 +4,48 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.14.85.62628",
-      "templateHash": "6636631780438787492"
+      "version": "0.18.4.5664",
+      "templateHash": "3106058624958854463"
     }
   },
   "parameters": {
-    "vmName": {
+    "vm1Name": {
       "type": "string",
-      "defaultValue": "web1-vm",
+      "defaultValue": "dev1-vm",
       "metadata": {
-        "description": "Enter a name for your VM."
+        "description": "Enter a name for your first web VM"
       }
     },
     "vmSize": {
       "type": "string",
       "defaultValue": "Standard_B2s",
       "metadata": {
-        "description": "Choose a size for your VM."
+        "description": "Choose a size for your VMs."
       }
     },
     "vmAdminUser": {
       "type": "string",
       "defaultValue": "azureuser",
       "metadata": {
-        "description": "Enter a username for accessing your VM."
+        "description": "Enter a username for accessing your VMs."
       }
     },
     "vmAdminPassword": {
       "type": "securestring",
       "metadata": {
-        "description": "Enter the password for accessing your VM."
+        "description": "Enter the password for accessing your VMs."
       }
     },
     "vnetName": {
       "type": "string",
-      "defaultValue": "vnet1",
+      "defaultValue": "dev-vnet",
       "metadata": {
-        "description": "Enter a name for your VNet."
+        "description": "Enter a name for your shared VNet."
       }
     },
     "vnetAddressSpace": {
       "type": "string",
-      "defaultValue": "10.100.0.0/16",
+      "defaultValue": "10.10.0.0/16",
       "metadata": {
         "description": "Choose an address space for your VNet."
       }
@@ -59,32 +59,62 @@
     },
     "vnetSubnetSpace": {
       "type": "string",
-      "defaultValue": "10.100.1.0/24",
+      "defaultValue": "10.10.1.0/24",
       "metadata": {
         "description": "Enter an address space for your subnet (within the VNet)."
       }
     },
     "nsgName": {
       "type": "string",
-      "defaultValue": "nsg1",
+      "defaultValue": "dev-nsg",
       "metadata": {
         "description": "Enter a name for the NSG that will protect your VNet."
+      }
+    },
+    "acrName": {
+      "type": "string",
+      "defaultValue": "[format('acr{0}', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "Provide a unique name for Azure Container Registry (or let it autogenerate)"
+      },
+      "maxLength": 50,
+      "minLength": 5
+    },
+    "acrSku": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "metadata": {
+        "description": "Provide a tier of your Azure Container Registry."
       }
     },
     "location": {
       "type": "string",
       "defaultValue": "[resourceGroup().location]",
       "metadata": {
-        "description": "Leave this as-is for all resources to be created in the same locaiton as the resource group."
+        "description": "Leave this as-is, for all resources to be created in the same locaiton as the resource group."
       }
     }
   },
   "variables": {
-    "vmNicName": "[format('{0}-nic1', parameters('vmName'))]",
-    "vmIpName": "[format('{0}-ip', parameters('vmName'))]",
-    "dnsLabelPrefix": "[toLower(format('{0}-{1}', parameters('vmName'), uniqueString(resourceGroup().id, parameters('vmName'))))]"
+    "$fxv#0": "#cloud-config\npackage_upgrade: true\npackages:\n  - curl\n  - apt-transport-https\n  - ca-certificates\n  - gnupg-agent\n  - software-properties-common\nruncmd:\n  - curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash\n  - curl -fsSL https://get.docker.com/ | sh\n  # replace $USER with the actual username you want to add to the docker group\n  - sudo usermod -aG docker $USER ",
+    "vm1NicName": "[format('{0}-nic1', parameters('vm1Name'))]",
+    "vm1IpName": "[format('{0}-ip', parameters('vm1Name'))]",
+    "dnsLabelPrefixVM1": "[toLower(format('{0}-{1}', parameters('vm1Name'), uniqueString(resourceGroup().id, parameters('vm1Name'))))]",
+    "cloudInit": "[base64(variables('$fxv#0'))]"
   },
   "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[parameters('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('acrSku')]"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    },
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2019-11-01",
@@ -93,30 +123,16 @@
       "properties": {
         "securityRules": [
           {
-            "name": "allow-inbound-rdp",
+            "name": "allow-inbound-ssh",
             "properties": {
-              "description": "Allows RDP inbound from all source addresses (should lock this down!)",
+              "description": "Allows SSH inbound from all source addresses (should lock this down!)",
               "protocol": "Tcp",
               "sourcePortRange": "*",
-              "destinationPortRange": "3389",
+              "destinationPortRange": "22",
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 1100,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "allow-inbound-http",
-            "properties": {
-              "description": "Allows http inbound from all source addresses (should lock this down!)",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "80",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 1200,
               "direction": "Inbound"
             }
           }
@@ -153,7 +169,7 @@
     {
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2019-11-01",
-      "name": "[variables('vmIpName')]",
+      "name": "[variables('vm1IpName')]",
       "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
@@ -161,14 +177,14 @@
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
-          "domainNameLabel": "[variables('dnsLabelPrefix')]"
+          "domainNameLabel": "[variables('dnsLabelPrefixVM1')]"
         }
       }
     },
     {
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-11-01",
-      "name": "[variables('vmNicName')]",
+      "name": "[variables('vm1NicName')]",
       "location": "[parameters('location')]",
       "properties": {
         "ipConfigurations": [
@@ -177,7 +193,7 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('vmIpName'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('vm1IpName'))]"
               },
               "subnet": {
                 "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('vnetSubnetName'))]"
@@ -187,32 +203,33 @@
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses', variables('vmIpName'))]"
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('vm1IpName'))]"
       ]
     },
     {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2020-12-01",
-      "name": "[parameters('vmName')]",
+      "name": "[parameters('vm1Name')]",
       "location": "[parameters('location')]",
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('vmSize')]"
         },
         "osProfile": {
-          "computerName": "[parameters('vmName')]",
+          "computerName": "[parameters('vm1Name')]",
           "adminUsername": "[parameters('vmAdminUser')]",
-          "adminPassword": "[parameters('vmAdminPassword')]"
+          "adminPassword": "[parameters('vmAdminPassword')]",
+          "customData": "[variables('cloudInit')]"
         },
         "storageProfile": {
           "imageReference": {
-            "publisher": "microsoftvisualstudio",
-            "offer": "visualstudio2022",
-            "sku": "vs-2022-comm-latest-ws2022",
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
             "version": "latest"
           },
           "osDisk": {
-            "name": "[format('{0}-disk', parameters('vmName'))]",
+            "name": "[format('{0}-disk', parameters('vm1Name'))]",
             "caching": "ReadWrite",
             "createOption": "FromImage"
           }
@@ -220,13 +237,13 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('vmNicName'))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('vm1NicName'))]"
             }
           ]
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', variables('vmNicName'))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('vm1NicName'))]"
       ]
     }
   ]
