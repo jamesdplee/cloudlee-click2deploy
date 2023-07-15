@@ -1,0 +1,13 @@
+#cloud-config
+package_upgrade: true
+packages:
+  - curl
+  - apt-transport-https
+  - ca-certificates
+  - gnupg-agent
+  - software-properties-common
+runcmd:
+  - curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+  - curl -fsSL https://get.docker.com/ | sh
+  # replace $USER with the actual username you want to add to the docker group
+  - sudo usermod -aG docker $USER 
