@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.18.4.5664",
-      "templateHash": "3106058624958854463"
+      "templateHash": "8522379621803057740"
     }
   },
   "parameters": {
@@ -96,7 +96,7 @@
     }
   },
   "variables": {
-    "$fxv#0": "#cloud-config\npackage_upgrade: true\npackages:\n  - curl\n  - apt-transport-https\n  - ca-certificates\n  - gnupg-agent\n  - software-properties-common\nruncmd:\n  - curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash\n  - curl -fsSL https://get.docker.com/ | sh\n  # replace $USER with the actual username you want to add to the docker group\n  - sudo usermod -aG docker $USER ",
+    "$fxv#0": "#cloud-config\npackage_upgrade: true\npackages:\n  - curl\n  - apt-transport-https\n  - ca-certificates\n  - gnupg-agent\n  - software-properties-common\nwrite_files:\n  - path: /usr/local/bin/add-docker-users.sh\n    permissions: '0755'\n    content: |\n      #!/bin/bash\n      for u in $(getent group sudo | awk -F: '{print $4}' | tr ',' ' ');\n        do sudo adduser $u docker > /dev/null;\n      done\nruncmd:\n  - curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash\n  - curl -fsSL https://get.docker.com/ | sh\n  - /usr/local/bin/add-docker-users.sh\n",
     "vm1NicName": "[format('{0}-nic1', parameters('vm1Name'))]",
     "vm1IpName": "[format('{0}-ip', parameters('vm1Name'))]",
     "dnsLabelPrefixVM1": "[toLower(format('{0}-{1}', parameters('vm1Name'), uniqueString(resourceGroup().id, parameters('vm1Name'))))]",
