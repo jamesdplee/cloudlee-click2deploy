@@ -6,8 +6,15 @@ packages:
   - ca-certificates
   - gnupg-agent
   - software-properties-common
+write_files:
+  - path: /usr/local/bin/add-docker-users.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      for u in $(getent group sudo | awk -F: '{print $4}' | tr ',' ' ');
+        do sudo adduser $u docker > /dev/null;
+      done
 runcmd:
   - curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
   - curl -fsSL https://get.docker.com/ | sh
-  # replace $USER with the actual username you want to add to the docker group
-  - sudo usermod -aG docker $USER 
+  - /usr/local/bin/add-docker-users.sh
