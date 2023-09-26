@@ -133,7 +133,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = [fo
   }
 }]
 
-resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(1, vmCount+1): {
+resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, vmCount): {
   name: '${vmName}${i}'
   location: location
   properties: {

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.21.1.54444",
-      "templateHash": "8575888403022091641"
+      "templateHash": "15618356845087091612"
     }
   },
   "parameters": {
@@ -204,18 +204,18 @@
     {
       "copy": {
         "name": "windowsVM",
-        "count": "[length(range(1, add(parameters('vmCount'), 1)))]"
+        "count": "[length(range(0, parameters('vmCount')))]"
       },
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2020-12-01",
-      "name": "[format('{0}{1}', parameters('vmName'), range(1, add(parameters('vmCount'), 1))[copyIndex()])]",
+      "name": "[format('{0}{1}', parameters('vmName'), range(0, parameters('vmCount'))[copyIndex()])]",
       "location": "[parameters('location')]",
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('vmSize')]"
         },
         "osProfile": {
-          "computerName": "[format('{0}{1}', parameters('vmName'), range(1, add(parameters('vmCount'), 1))[copyIndex()])]",
+          "computerName": "[format('{0}{1}', parameters('vmName'), range(0, parameters('vmCount'))[copyIndex()])]",
           "adminUsername": "[parameters('vmAdminUser')]",
           "adminPassword": "[parameters('vmAdminPassword')]"
         },
@@ -227,7 +227,7 @@
             "version": "latest"
           },
           "osDisk": {
-            "name": "[format('{0}{1}-disk', parameters('vmName'), range(1, add(parameters('vmCount'), 1))[copyIndex()])]",
+            "name": "[format('{0}{1}-disk', parameters('vmName'), range(0, parameters('vmCount'))[copyIndex()])]",
             "caching": "ReadWrite",
             "createOption": "FromImage"
           }
@@ -235,13 +235,13 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}', variables('vmNicName'), range(1, add(parameters('vmCount'), 1))[range(1, add(parameters('vmCount'), 1))[copyIndex()]]))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}', variables('vmNicName'), range(1, add(parameters('vmCount'), 1))[range(0, parameters('vmCount'))[copyIndex()]]))]"
             }
           ]
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}', variables('vmNicName'), range(1, add(parameters('vmCount'), 1))[range(1, add(parameters('vmCount'), 1))[copyIndex()]]))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}', variables('vmNicName'), range(1, add(parameters('vmCount'), 1))[range(0, parameters('vmCount'))[copyIndex()]]))]"
       ]
     }
   ]
