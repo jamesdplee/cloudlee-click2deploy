@@ -112,8 +112,8 @@ resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
 }
 
 
-resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = {
-  name: vmNicName
+resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = [for i in range(1, vmCount+1): {
+  name: '${vmNicName}${i}'
   location: location
   properties: {
     ipConfigurations: [
@@ -131,17 +131,17 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = {
       }
     ]
   }
-}
+}]
 
-resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, vmCount): {
-  name: 'vmName${i}'
+resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(1, vmCount+1): {
+  name: '${vmName}${i}'
   location: location
   properties: {
     hardwareProfile: {
       vmSize: vmSize
     }
     osProfile: {
-      computerName: vmName
+      computerName: '${vmName}${i}'
       adminUsername: vmAdminUser
       adminPassword: vmAdminPassword
     }
@@ -153,7 +153,7 @@ resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in ra
         version: 'latest'
       }
       osDisk: {
-        name: '${vmName}-disk'
+        name: '${vmName}${i}-disk'
         caching: 'ReadWrite'
         createOption: 'FromImage'
       }
@@ -161,7 +161,7 @@ resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in ra
     networkProfile: {
       networkInterfaces: [
         {
-          id: networkInterface.id
+          id: networkInterface[i].id
         }
       ]
     }
