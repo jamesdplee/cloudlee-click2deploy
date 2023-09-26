@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.21.1.54444",
-      "templateHash": "5486130579816566350"
+      "templateHash": "16011471984633115199"
     }
   },
   "parameters": {
@@ -45,7 +45,7 @@
     },
     "scriptName": {
       "type": "string",
-      "defaultValue": "cse-adoAgentSetup.ps1",
+      "defaultValue": "cse-vmGeneric.ps1",
       "metadata": {
         "description": "Enter the name of the CSE script to run (recommended to leave as-is)."
       }
@@ -53,7 +53,7 @@
     "scriptUris": {
       "type": "array",
       "defaultValue": [
-        "https://raw.githubusercontent.com/jamesdplee/cloudlee-click2deploy/main/scripts/cse-vmGeneric.ps1"
+        "[format('https://raw.githubusercontent.com/jamesdplee/cloudlee-click2deploy/main/scripts/{0}', parameters('scriptName'))]"
       ],
       "metadata": {
         "description": "Enter the name of the CSE script URI (recommended to leave as-is)."
