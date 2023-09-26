@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.21.1.54444",
-      "templateHash": "15618356845087091612"
+      "templateHash": "5486130579816566350"
     }
   },
   "parameters": {
@@ -41,6 +41,29 @@
       "type": "securestring",
       "metadata": {
         "description": "Enter the password for accessing your VM(s)."
+      }
+    },
+    "scriptName": {
+      "type": "string",
+      "defaultValue": "cse-adoAgentSetup.ps1",
+      "metadata": {
+        "description": "Enter the name of the CSE script to run (recommended to leave as-is)."
+      }
+    },
+    "scriptUris": {
+      "type": "array",
+      "defaultValue": [
+        "https://raw.githubusercontent.com/jamesdplee/cloudlee-click2deploy/main/scripts/cse-vmGeneric.ps1"
+      ],
+      "metadata": {
+        "description": "Enter the name of the CSE script URI (recommended to leave as-is)."
+      }
+    },
+    "scriptArgs": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Enter any arguments you require (recommended to leave as-is)."
       }
     },
     "vnetName": {
@@ -87,9 +110,8 @@
     }
   },
   "variables": {
-    "vmNicName": "[format('{0}-nic1', parameters('vmName'))]",
-    "vmIpName": "[format('{0}-ip', parameters('vmName'))]",
-    "dnsLabelPrefix": "[toLower(format('{0}-{1}', parameters('vmName'), uniqueString(resourceGroup().id, parameters('vmName'))))]"
+    "dnsLabelPrefix": "[toLower(format('{0}-{1}', parameters('vmName'), uniqueString(resourceGroup().id, parameters('vmName'))))]",
+    "scriptCmd": "[format('powershell -ExecutionPolicy Unrestricted -File {0} {1}', parameters('scriptName'), parameters('scriptArgs'))]"
   },
   "resources": [
     {
@@ -158,9 +180,13 @@
       ]
     },
     {
+      "copy": {
+        "name": "publicIPAddress",
+        "count": "[length(range(0, parameters('vmCount')))]"
+      },
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2019-11-01",
-      "name": "[variables('vmIpName')]",
+      "name": "[format('{0}{1}-ip', parameters('vmName'), range(0, parameters('vmCount'))[copyIndex()])]",
       "location": "[parameters('location')]",
       "sku": {
         "name": "Standard"
@@ -168,18 +194,18 @@
       "properties": {
         "publicIPAllocationMethod": "Static",
         "dnsSettings": {
-          "domainNameLabel": "[variables('dnsLabelPrefix')]"
+          "domainNameLabel": "[format('{0}{1}', variables('dnsLabelPrefix'), range(0, parameters('vmCount'))[copyIndex()])]"
         }
       }
     },
     {
       "copy": {
         "name": "networkInterface",
-        "count": "[length(range(1, add(parameters('vmCount'), 1)))]"
+        "count": "[length(range(0, parameters('vmCount')))]"
       },
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2020-11-01",
-      "name": "[format('{0}{1}', variables('vmNicName'), range(1, add(parameters('vmCount'), 1))[copyIndex()])]",
+      "name": "[format('{0}{1}-nic', parameters('vmName'), range(0, parameters('vmCount'))[copyIndex()])]",
       "location": "[parameters('location')]",
       "properties": {
         "ipConfigurations": [
@@ -188,7 +214,7 @@
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('vmIpName'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}{1}-ip', parameters('vmName'), range(0, parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]]))]"
               },
               "subnet": {
                 "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('vnetSubnetName'))]"
@@ -198,7 +224,32 @@
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses', variables('vmIpName'))]"
+        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}{1}-ip', parameters('vmName'), range(0, parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]]))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "windowsVMGuestConfigExtension",
+        "count": "[length(range(0, parameters('vmCount')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', format('{0}{1}', parameters('vmName'), range(0, parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]]), 'config-app')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "enableAutomaticUpgrade": false,
+        "settings": {},
+        "protectedSettings": {
+          "fileUris": "[parameters('scriptUris')]",
+          "commandToExecute": "[variables('scriptCmd')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}{1}', parameters('vmName'), range(0, parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]]))]"
       ]
     },
     {
@@ -235,13 +286,13 @@
         "networkProfile": {
           "networkInterfaces": [
             {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}', variables('vmNicName'), range(1, add(parameters('vmCount'), 1))[range(0, parameters('vmCount'))[copyIndex()]]))]"
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}-nic', parameters('vmName'), range(0, parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]]))]"
             }
           ]
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}', variables('vmNicName'), range(1, add(parameters('vmCount'), 1))[range(0, parameters('vmCount'))[copyIndex()]]))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}-nic', parameters('vmName'), range(0, parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]]))]"
       ]
     }
   ]

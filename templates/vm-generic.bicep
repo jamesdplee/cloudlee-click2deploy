@@ -11,14 +11,21 @@ param vmCount int = 1
 param vmName string = 'vm'
 @description('Choose a size for your VM(s).')
 param vmSize string = 'Standard_B2s'
-var vmNicName = '${vmName}-nic1'
-var vmIpName = '${vmName}-ip'
 @description('Enter a username for accessing your VM(s).')
 param vmAdminUser string = 'azureuser'
 @secure()
 @description('Enter the password for accessing your VM(s).')
 param vmAdminPassword string
 var dnsLabelPrefix = toLower('${vmName}-${uniqueString(resourceGroup().id, vmName)}')
+
+// VM Extension
+@description('Enter the name of the CSE script to run (recommended to leave as-is).')
+param scriptName string = 'cse-adoAgentSetup.ps1'
+@description('Enter the name of the CSE script URI (recommended to leave as-is).')
+param scriptUris array = ['https://raw.githubusercontent.com/jamesdplee/cloudlee-click2deploy/main/scripts/cse-vmGeneric.ps1']
+@description('Enter any arguments you require (recommended to leave as-is).')
+param scriptArgs string = ''
+var scriptCmd = 'powershell -ExecutionPolicy Unrestricted -File ${scriptName} ${scriptArgs}'
 
 // VNet values
 @description('Enter a name for your VNet.')
@@ -97,8 +104,8 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   }
 }
 
-resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
-  name: vmIpName
+resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2019-11-01' = [for i in range(0, vmCount): {
+  name: '${vmName}${i}-ip'
   location: location
   sku: {
     name: 'Standard'
@@ -106,14 +113,14 @@ resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
   properties: {
     publicIPAllocationMethod: 'Static'
     dnsSettings: {
-      domainNameLabel: dnsLabelPrefix
+      domainNameLabel: '${dnsLabelPrefix}${i}'
     }
   }
-}
+}]
 
 
-resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = [for i in range(1, vmCount+1): {
-  name: '${vmNicName}${i}'
+resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = [for i in range(0, vmCount): {
+  name: '${vmName}${i}-nic'
   location: location
   properties: {
     ipConfigurations: [
@@ -122,7 +129,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = [fo
         properties: {
           privateIPAllocationMethod: 'Dynamic'
           publicIPAddress: {
-            id: publicIPAddress.id
+            id: publicIPAddress[i].id
           }
           subnet: {
             id: resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, vnetSubnetName)
@@ -132,6 +139,25 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = [fo
     ]
   }
 }]
+
+resource windowsVMGuestConfigExtension 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = [for i in range(0, vmCount): {
+  parent: windowsVM[i]
+  name: 'config-app'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
+    autoUpgradeMinorVersion: true
+    enableAutomaticUpgrade: false
+    settings: { }
+    protectedSettings: { 
+      fileUris: scriptUris
+      commandToExecute: scriptCmd
+    }
+  }
+}]
+
 
 resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, vmCount): {
   name: '${vmName}${i}'
