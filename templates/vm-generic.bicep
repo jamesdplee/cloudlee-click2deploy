@@ -140,7 +140,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2020-11-01' = [fo
   }
 }]
 
-resource windowsVMGuestConfigExtension 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = [for i in range(0, vmCount): {
+resource windowsVMGuestConfigExtension 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = [for i in range(0, vmCount): if (!empty(scriptUris)) {  
   parent: windowsVM[i]
   name: 'config-app'
   location: location

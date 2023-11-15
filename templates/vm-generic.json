@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.21.1.54444",
-      "templateHash": "16011471984633115199"
+      "version": "0.23.1.45101",
+      "templateHash": "8829798519729361351"
     }
   },
   "parameters": {
@@ -232,6 +232,7 @@
         "name": "windowsVMGuestConfigExtension",
         "count": "[length(range(0, parameters('vmCount')))]"
       },
+      "condition": "[not(empty(parameters('scriptUris')))]",
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2020-12-01",
       "name": "[format('{0}/{1}', format('{0}{1}', parameters('vmName'), range(0, parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]]), 'config-app')]",
