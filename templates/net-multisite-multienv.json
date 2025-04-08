@@ -1,0 +1,194 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "locationOne": {
+          "type": "string",
+          "defaultValue": "australiaeast",
+          "metadata": {
+              "description": "First Azure region"
+          }
+      },
+      "locationTwo": {
+          "type": "string",
+          "defaultValue": "eastus",
+          "metadata": {
+              "description": "Second Azure region"
+          }
+      }
+  },
+  "variables": {
+      "locationOnePrefix": "[toLower(parameters('locationOne'))]",
+      "locationTwoPrefix": "[toLower(parameters('locationTwo'))]",
+      "vnetHubOne": "[concat(variables('locationOnePrefix'), '-hub-vnet')]",
+      "vnetCorpProdOne": "[concat(variables('locationOnePrefix'), '-corp-prod-vnet')]",
+      "vnetRetailProdOne": "[concat(variables('locationOnePrefix'), '-retail-prod-vnet')]",
+      "vnetRetailDevOne": "[concat(variables('locationOnePrefix'), '-retail-dev-vnet')]",
+      "vnetHubTwo": "[concat(variables('locationTwoPrefix'), '-hub-vnet')]",
+      "vnetFinanceProdTwo": "[concat(variables('locationTwoPrefix'), '-finance-prod-vnet')]"
+  },
+  "resources": [
+      {
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2023-02-01",
+          "name": "[variables('vnetHubOne')]",
+          "location": "[parameters('locationOne')]",
+          "tags": {
+              "region": "[variables('locationOnePrefix')]",
+              "bunit": "shared",
+              "env": "all",
+              "role": "hub"
+          },
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "10.0.0.0/16"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "subnet1",
+                      "properties": {
+                          "addressPrefix": "10.0.0.0/24"
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2023-02-01",
+          "name": "[variables('vnetCorpProdOne')]",
+          "location": "[parameters('locationOne')]",
+          "tags": {
+              "region": "[variables('locationOnePrefix')]",
+              "bunit": "corp",
+              "env": "prod",
+              "role": "spoke"
+          },
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "10.1.0.0/16"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "subnet1",
+                      "properties": {
+                          "addressPrefix": "10.1.0.0/24"
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2023-02-01",
+          "name": "[variables('vnetRetailProdOne')]",
+          "location": "[parameters('locationOne')]",
+          "tags": {
+              "region": "[variables('locationOnePrefix')]",
+              "bunit": "retail",
+              "env": "prod",
+              "role": "spoke"
+          },
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "10.2.0.0/16"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "subnet1",
+                      "properties": {
+                          "addressPrefix": "10.2.0.0/24"
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2023-02-01",
+          "name": "[variables('vnetRetailDevOne')]",
+          "location": "[parameters('locationOne')]",
+          "tags": {
+              "region": "[variables('locationOnePrefix')]",
+              "bunit": "retail",
+              "env": "dev",
+              "role": "spoke"
+          },
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "10.3.0.0/16"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "subnet1",
+                      "properties": {
+                          "addressPrefix": "10.3.0.0/24"
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2023-02-01",
+          "name": "[variables('vnetHubTwo')]",
+          "location": "[parameters('locationTwo')]",
+          "tags": {
+              "region": "[variables('locationTwoPrefix')]",
+              "bunit": "shared",
+              "env": "all",
+              "role": "hub"
+          },
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "10.10.0.0/16"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "subnet1",
+                      "properties": {
+                          "addressPrefix": "10.10.0.0/24"
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.Network/virtualNetworks",
+          "apiVersion": "2023-02-01",
+          "name": "[variables('vnetFinanceProdTwo')]",
+          "location": "[parameters('locationTwo')]",
+          "tags": {
+              "region": "[variables('locationTwoPrefix')]",
+              "bunit": "finance",
+              "env": "prod",
+              "role": "spoke"
+          },
+          "properties": {
+              "addressSpace": {
+                  "addressPrefixes": [
+                      "10.11.0.0/16"
+                  ]
+              },
+              "subnets": [
+                  {
+                      "name": "subnet1",
+                      "properties": {
+                          "addressPrefix": "10.11.0.0/24"
+                      }
+                  }
+              ]
+          }
+      }
+  ]
+}
