@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.14.85.62628",
-      "templateHash": "6636631780438787492"
+      "version": "0.34.44.8038",
+      "templateHash": "10790938111694679558"
     }
   },
   "parameters": {
@@ -207,8 +207,8 @@
         "storageProfile": {
           "imageReference": {
             "publisher": "microsoftvisualstudio",
-            "offer": "visualstudio2022",
-            "sku": "vs-2022-comm-latest-ws2022",
+            "offer": "visualstudiowsplustools",
+            "sku": "vs-2022-com-ws2025-datacenter-azure-gen2",
             "version": "latest"
           },
           "osDisk": {
