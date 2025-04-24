@@ -1,0 +1,456 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.34.44.8038",
+      "templateHash": "4195740268594400552"
+    }
+  },
+  "parameters": {
+    "region1": {
+      "type": "string",
+      "defaultValue": "australiaeast",
+      "metadata": {
+        "description": "Region for VNet1 (Hub)"
+      }
+    },
+    "region2": {
+      "type": "string",
+      "defaultValue": "australiacentral",
+      "metadata": {
+        "description": "Region for VNet2 (Spoke)"
+      }
+    },
+    "vnet1Name": {
+      "type": "string",
+      "defaultValue": "hub-vnet",
+      "metadata": {
+        "description": "Name of VNet1 (Hub)"
+      }
+    },
+    "vnet2Name": {
+      "type": "string",
+      "defaultValue": "spoke-vnet",
+      "metadata": {
+        "description": "Name of VNet2 (Spoke)"
+      }
+    },
+    "enablePeering": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable VNet peering between hub and spoke"
+      }
+    },
+    "enableVMs": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable VM creation"
+      }
+    },
+    "vm1Name": {
+      "type": "string",
+      "defaultValue": "vm1",
+      "metadata": {
+        "description": "Name of VM1 (in hub)"
+      }
+    },
+    "vm2Name": {
+      "type": "string",
+      "defaultValue": "vm2",
+      "metadata": {
+        "description": "Name of VM2 (in spoke)"
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2s",
+      "metadata": {
+        "description": "VM size for both VMs"
+      }
+    },
+    "vmAdminUser": {
+      "type": "string",
+      "metadata": {
+        "description": "VM Admin username"
+      }
+    },
+    "vmAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "VM Admin password"
+      }
+    },
+    "osType": {
+      "type": "string",
+      "defaultValue": "windows2022-vs",
+      "allowedValues": [
+        "windows2022-vs",
+        "windows2019",
+        "ubuntu2204"
+      ],
+      "metadata": {
+        "description": "Choose OS type"
+      }
+    },
+    "scriptUris": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Script URI array for Custom Script Extension (leave empty if unused)"
+      }
+    },
+    "scriptCmd": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Command to execute for CSE (leave empty if unused)"
+      }
+    }
+  },
+  "variables": {
+    "subnetName": "subnet1",
+    "vnet1Prefix": "10.100.0.0/16",
+    "vnet2Prefix": "10.201.0.0/16",
+    "subnet1Prefix": "10.100.0.0/24",
+    "subnet2Prefix": "10.201.0.0/24",
+    "nsg1Name": "[format('{0}-default-nsg', parameters('region1'))]",
+    "nsg2Name": "[format('{0}-default-nsg', parameters('region2'))]",
+    "dnsLabelPrefixVM1": "[toLower(format('{0}-{1}', parameters('vm1Name'), uniqueString(resourceGroup().id, parameters('vm1Name'))))]",
+    "dnsLabelPrefixVM2": "[toLower(format('{0}-{1}', parameters('vm2Name'), uniqueString(resourceGroup().id, parameters('vm2Name'))))]",
+    "vmImageReference": "[if(contains(createArray('windows2022-vs'), parameters('osType')), createObject('publisher', 'microsoftvisualstudio', 'offer', 'visualstudio2022', 'sku', 'vs-2022-comm-latest-ws2022', 'version', 'latest'), if(equals(parameters('osType'), 'windows2019'), createObject('publisher', 'MicrosoftWindowsServer', 'offer', 'WindowsServer', 'sku', '2019-Datacenter', 'version', 'latest'), createObject('publisher', 'Canonical', 'offer', '0001-com-ubuntu-server-jammy', 'sku', '22_04-lts-gen2', 'version', 'latest')))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-05-01",
+      "name": "[variables('nsg1Name')]",
+      "location": "[parameters('region1')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow-inbound-rdp",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2022-05-01",
+      "name": "[variables('nsg2Name')]",
+      "location": "[parameters('region2')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "allow-inbound-rdp",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1000,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2022-07-01",
+      "name": "[parameters('vnet1Name')]",
+      "location": "[parameters('region1')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnet1Prefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnet1Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg1Name'))]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg1Name'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2022-07-01",
+      "name": "[parameters('vnet2Name')]",
+      "location": "[parameters('region2')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vnet2Prefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "[variables('subnet2Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg2Name'))]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsg2Name'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enablePeering')]",
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2022-07-01",
+      "name": "[format('{0}/peer-to-{1}', parameters('vnet1Name'), parameters('vnet2Name'))]",
+      "properties": {
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet2Name'))]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet2Name'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enablePeering')]",
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2022-07-01",
+      "name": "[format('{0}/peer-to-{1}', parameters('vnet2Name'), parameters('vnet1Name'))]",
+      "properties": {
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name'))]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet2Name'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableVMs')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2022-05-01",
+      "name": "[format('{0}-ip', parameters('vm1Name'))]",
+      "location": "[parameters('region1')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[variables('dnsLabelPrefixVM1')]"
+        }
+      }
+    },
+    {
+      "condition": "[parameters('enableVMs')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2022-05-01",
+      "name": "[format('{0}-ip', parameters('vm2Name'))]",
+      "location": "[parameters('region2')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[variables('dnsLabelPrefixVM2')]"
+        }
+      }
+    },
+    {
+      "condition": "[parameters('enableVMs')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-05-01",
+      "name": "[format('{0}-nic', parameters('vm1Name'))]",
+      "location": "[parameters('region1')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-ip', parameters('vm1Name')))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet1Name'), variables('subnetName'))]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-ip', parameters('vm1Name')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet1Name'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableVMs')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2022-05-01",
+      "name": "[format('{0}-nic', parameters('vm2Name'))]",
+      "location": "[parameters('region2')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-ip', parameters('vm2Name')))]"
+              },
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnet2Name'), variables('subnetName'))]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-ip', parameters('vm2Name')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnet2Name'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableVMs')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2022-08-01",
+      "name": "[parameters('vm1Name')]",
+      "location": "[parameters('region1')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('vm1Name')]",
+          "adminUsername": "[parameters('vmAdminUser')]",
+          "adminPassword": "[parameters('vmAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": "[variables('vmImageReference')]",
+          "osDisk": {
+            "name": "[format('{0}-disk', parameters('vm1Name'))]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vm1Name')))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vm1Name')))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableVMs')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2022-08-01",
+      "name": "[parameters('vm2Name')]",
+      "location": "[parameters('region2')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('vm2Name')]",
+          "adminUsername": "[parameters('vmAdminUser')]",
+          "adminPassword": "[parameters('vmAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": "[variables('vmImageReference')]",
+          "osDisk": {
+            "name": "[format('{0}-disk', parameters('vm2Name'))]",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vm2Name')))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', format('{0}-nic', parameters('vm2Name')))]"
+      ]
+    },
+    {
+      "condition": "[and(and(parameters('enableVMs'), greater(length(parameters('scriptUris')), 0)), not(empty(parameters('scriptCmd'))))]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2022-08-01",
+      "name": "[format('{0}/{1}', parameters('vm1Name'), format('cse-{0}', parameters('vm1Name')))]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": "[parameters('scriptUris')]",
+          "commandToExecute": "[parameters('scriptCmd')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vm1Name'))]"
+      ]
+    },
+    {
+      "condition": "[and(and(parameters('enableVMs'), greater(length(parameters('scriptUris')), 0)), not(empty(parameters('scriptCmd'))))]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2022-08-01",
+      "name": "[format('{0}/{1}', parameters('vm2Name'), format('cse-{0}', parameters('vm2Name')))]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": "[parameters('scriptUris')]",
+          "commandToExecute": "[parameters('scriptCmd')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vm2Name'))]"
+      ]
+    }
+  ]
+}
