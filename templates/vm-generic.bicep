@@ -173,9 +173,9 @@ resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in ra
     }
     storageProfile: {
       imageReference: {
-        publisher: 'microsoftvisualstudio'
-        offer: 'visualstudiowsplustools'
-        sku: 'vs-2022-com-ws2025-datacenter-azure-gen2'
+        publisher: 'MicrosoftWindowsServer'
+        offer: 'WindowsServer'
+        sku: '2022-datacenter-azure-edition-core'
         version: 'latest'
       }
       osDisk: {
