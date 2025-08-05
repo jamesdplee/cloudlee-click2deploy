@@ -159,7 +159,7 @@ resource windowsVMGuestConfigExtension 'Microsoft.Compute/virtualMachines/extens
 }]
 
 
-resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in range(0, vmCount): {
+resource windowsVM 'Microsoft.Compute/virtualMachines@2024-11-01' = [for i in range(0, vmCount): {
   name: '${vmName}${i}'
   location: location
   properties: {
@@ -175,13 +175,18 @@ resource windowsVM 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in ra
       imageReference: {
         publisher: 'MicrosoftWindowsServer'
         offer: 'WindowsServer'
-        sku: '2022-datacenter-azure-edition-core'
+        sku: '2022-datacenter-azure-edition'
         version: 'latest'
       }
       osDisk: {
+        osType: 'Windows'
         name: '${vmName}${i}-disk'
         caching: 'ReadWrite'
         createOption: 'FromImage'
+        managedDisk: {
+          storageAccountType: 'Standard_LRS'
+        }
+        deleteOption: 'Delete'
       }
     }
     networkProfile: {
