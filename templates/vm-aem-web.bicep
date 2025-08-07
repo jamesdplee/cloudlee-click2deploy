@@ -259,8 +259,8 @@ resource windowsVM2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'microsoftvisualstudio'
-        offer: 'visualstudio2022'
-        sku: 'vs-2022-comm-latest-ws2022'
+        offer: 'visualstudiowsplustools'
+        sku: 'vs-2022-com-ws2025-datacenter-azure-gen2'
         version: 'latest'
       }
       osDisk: {
