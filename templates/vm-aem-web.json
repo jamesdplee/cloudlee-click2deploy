@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.37.4.10188",
-      "templateHash": "4655540930151391236"
+      "templateHash": "16187034050133924594"
     }
   },
   "parameters": {
@@ -333,6 +333,13 @@
               "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('vm1NicName'))]"
             }
           ]
+        },
+        "securityProfile": {
+          "securityType": "TrustedLaunch",
+          "uefiSettings": {
+            "secureBootEnabled": true,
+            "vTpmEnabled": true
+          }
         }
       },
       "dependsOn": [
@@ -372,6 +379,13 @@
               "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('vm2NicName'))]"
             }
           ]
+        },
+        "securityProfile": {
+          "securityType": "TrustedLaunch",
+          "uefiSettings": {
+            "secureBootEnabled": true,
+            "vTpmEnabled": true
+          }
         }
       },
       "dependsOn": [

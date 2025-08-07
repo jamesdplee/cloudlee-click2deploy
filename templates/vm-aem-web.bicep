@@ -240,6 +240,13 @@ resource windowsVM1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
         }
       ]
     }
+    securityProfile: {
+      securityType: 'TrustedLaunch'
+      uefiSettings: {
+        secureBootEnabled: true
+        vTpmEnabled: true
+      }
+    }    
   }
 }
 
@@ -275,6 +282,13 @@ resource windowsVM2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
           id: networkInterface2.id
         }
       ]
+    }
+    securityProfile: {
+      securityType: 'TrustedLaunch'
+      uefiSettings: {
+        secureBootEnabled: true
+        vTpmEnabled: true
+      }
     }
   }
 }
