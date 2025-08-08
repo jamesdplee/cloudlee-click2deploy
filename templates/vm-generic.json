@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.34.44.8038",
-      "templateHash": "1586808144773663362"
+      "version": "0.37.4.10188",
+      "templateHash": "18179278714943369743"
     }
   },
   "parameters": {
@@ -259,7 +259,7 @@
         "count": "[length(range(0, parameters('vmCount')))]"
       },
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2020-12-01",
+      "apiVersion": "2024-11-01",
       "name": "[format('{0}{1}', parameters('vmName'), range(0, parameters('vmCount'))[copyIndex()])]",
       "location": "[parameters('location')]",
       "properties": {
@@ -273,15 +273,20 @@
         },
         "storageProfile": {
           "imageReference": {
-            "publisher": "microsoftvisualstudio",
-            "offer": "visualstudiowsplustools",
-            "sku": "vs-2022-com-ws2025-datacenter-azure-gen2",
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter-azure-edition",
             "version": "latest"
           },
           "osDisk": {
+            "osType": "Windows",
             "name": "[format('{0}{1}-disk', parameters('vmName'), range(0, parameters('vmCount'))[copyIndex()])]",
             "caching": "ReadWrite",
-            "createOption": "FromImage"
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Standard_LRS"
+            },
+            "deleteOption": "Delete"
           }
         },
         "networkProfile": {
